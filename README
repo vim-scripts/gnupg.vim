@@ -45,9 +45,14 @@ Variables:
     If set, these recipients are used as defaults when no other recipient is 
     defined. This variable is a Vim list. Default is unset. 
 
+  g:GPGUsePipes
+    If set to 1, use pipes instead of temporary files when interacting with
+    gnupg.  When set to 1, this can cause terminal-based gpg agents to not
+    display correctly when prompting for passwords.  Defaults to 0.
+
 Known Issues: 
 
-  In some cases gvim can't decryt files 
+  In some cases gvim can't decrypt files 
 
   This is caused by the fact that a running gvim has no TTY and thus gpg is 
   not able to ask for the passphrase by itself. This is a problem for Windows 
