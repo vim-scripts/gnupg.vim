@@ -139,7 +139,7 @@
 if (exists("g:loaded_gnupg") || &cp || exists("#GnuPG"))
   finish
 endif
-let g:loaded_gnupg = '2.4'
+let g:loaded_gnupg = '2.5'
 let s:GPGInitRun = 0
 
 " check for correct vim version {{{2
@@ -489,7 +489,7 @@ function s:GPGBufReadPost()
   silent 1delete
   let &undolevels = levels
   " call the autocommand for the file minus .gpg$
-  execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
+  silent execute ':doautocmd BufReadPost ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufReadPost()")
 endfunction
@@ -502,7 +502,7 @@ endfunction
 function s:GPGBufWritePre()
   call s:GPGDebug(3, ">>>>>>>> Entering s:GPGBufWritePre()")
   " call the autocommand for the file minus .gpg$
-  execute ':doautocmd BufWritePre ' . fnameescape(expand('<afile>:r'))
+  silent execute ':doautocmd BufWritePre ' . fnameescape(expand('<afile>:r'))
   call s:GPGDebug(2, 'called autocommand for ' . fnameescape(expand('<afile>:r')))
   call s:GPGDebug(3, "<<<<<<<< Leaving s:GPGBufWritePre()")
 endfunction
@@ -1091,11 +1091,6 @@ function s:GPGNameToID(name)
 
       let fields = split(line, ":")
 
-      " Ignore expired keys
-      if fields[1] == 'e'
-        continue
-      endif
-
       " search for the next uid
       if pubseen
         if (fields[0] == "uid")
@@ -1106,6 +1101,11 @@ function s:GPGNameToID(name)
       " search for the next pub
       else
         if (fields[0] == "pub")
+          " Ignore keys which are not usable for encryption
+          if fields[11] !~? 'e'
+            continue
+          endif
+
           let identity = fields[4]
           let gpgids += [identity]
           if exists("*strftime")
@@ -1163,13 +1163,13 @@ function s:GPGIDToName(identity)
   for line in lines
     let fields = split(line, ":")
 
-    " Ignore expired keys
-    if fields[1] == 'e'
-      continue
-    endif
-
     if !pubseen " search for the next pub
       if (fields[0] == "pub")
+        " Ignore keys which are not usable for encryption
+        if fields[11] !~? 'e'
+          continue
+        endif
+
         let pubseen = 1
       endif
     else " search for the next uid
@@ -1260,7 +1260,7 @@ function s:GPGDebug(level, text)
   if exists("g:GPGDebugLevel") && g:GPGDebugLevel >= a:level
     if exists("g:GPGDebugLog")
       execute "redir >> " . g:GPGDebugLog
-      echom "GnuPG: " . a:text
+      silent echom "GnuPG: " . a:text
       redir END
     else
       echom "GnuPG: " . a:text
